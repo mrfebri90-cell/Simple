@@ -7,10 +7,10 @@ import FilerobotImageEditor from "filerobot-image-editor";
  * Workspace Photo - Simplex Editor
  * Design: Neon Cyberpunk Dark Mode Mobile
  * 
- * Menggunakan SDK ASLI: Filerobot Image Editor
- * - Dark Mode dengan filter invert
- * - Layout Mobile (toolbar horizontal di bawah)
- * - Canvas editor bawaan SDK dengan tools
+ * Menggunakan SDK ASLI: Filerobot Image Editor dengan:
+ * - Dark Mode (#000000 background, #ffffff text)
+ * - Mobile Layout (menu toolbar di bawah, bukan samping)
+ * - Tools terbatas: crop, finetune, filters, annotate, resize
  */
 export default function WorkspacePhoto() {
   const [, setLocation] = useLocation();
@@ -23,7 +23,7 @@ export default function WorkspacePhoto() {
     "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=500&h=500&fit=crop"
   );
 
-  // Inisialisasi Filerobot Editor dengan Dark Mode Mobile
+  // Inisialisasi Filerobot Editor dengan Dark Mode & Mobile Layout
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -34,7 +34,7 @@ export default function WorkspacePhoto() {
           editorRef.current.terminate?.();
         }
 
-        // Konfigurasi Filerobot
+        // Konfigurasi Filerobot dengan Dark Mode & Mobile Layout
         const config: any = {
           source: selectedImage,
           onSave: (editorState: any, canvas: any) => {
@@ -49,20 +49,25 @@ export default function WorkspacePhoto() {
             console.log("Editor closed");
           },
           
-          // Tools Configuration
-          tools: {
-            enabled: [
-              "crop",
-              "finetune",
-              "filters",
-              "adjust",
-              "watermark",
-              "annotate",
-              "resize",
-              "rotate",
-              "flip",
-            ],
+          // 1. DARK MODE - Konfigurasi warna tema
+          theme: {
+            palette: {
+              'bg-primary': '#000000',
+              'bg-secondary': '#0a0a0a',
+              'bg-primary-active': '#171717',
+              'text-primary': '#ffffff',
+              'text-secondary': '#a3a3a3',
+              'accent-primary': '#22c55e',
+              'icons-primary': '#ffffff',
+              'border-primary': '#1f2937'
+            },
           },
+
+          // 2. MOBILE LAYOUT - Menu toolbar di bawah (horizontal)
+          layout: 'simple',
+
+          // 3. Tools terbatas sesuai design
+          tools: ['crop', 'finetune', 'filters', 'annotate', 'resize'],
           
           // Mobile-specific settings
           showBackButton: false,
@@ -70,8 +75,16 @@ export default function WorkspacePhoto() {
           previewPixelRatio: 1,
           minWidth: 100,
           minHeight: 100,
-          maxWidth: 4000,
-          maxHeight: 4000,
+          maxWidth: 500,
+          maxHeight: 500,
+          
+          // Force mobile responsive layout
+          responsive: true,
+          useCloudimage: false,
+          
+          // Mobile viewport configuration
+          disableIfFontSizeMoreThan: 16,
+          disableZoom: true,
         };
 
         // Inisialisasi editor dengan container
@@ -145,14 +158,13 @@ export default function WorkspacePhoto() {
           </div>
         </div>
 
-        {/* Editor Area - FILEROBOT SDK CANVAS - Dark Mode with Filter */}
+        {/* Editor Area - FILEROBOT SDK CANVAS - Dark Mode Mobile Layout */}
         <div 
           ref={containerRef}
           className="flex-1 overflow-hidden bg-black"
           style={{ 
             minHeight: 0,
             width: "100%",
-            filter: "invert(1) hue-rotate(180deg)",
           }}
         />
 

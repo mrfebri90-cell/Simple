@@ -196,6 +196,12 @@
     border-color: #333333 !important;
   }
 
+  /* Force Filerobot toolbar to bottom for mobile layout */
+  .FIE_container {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
   /**
    * Custom container utility that centers content and adds responsive padding.
    * Mobile-first design: max-width 428px (iPhone 12 Pro) for mobile testing
