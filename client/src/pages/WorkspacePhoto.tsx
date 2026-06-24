@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { X, RotateCcw, RotateCw, Download, ChevronUp } from "lucide-react";
+import CustomImageEditor from "@/components/CustomImageEditor";
 
 /**
  * Workspace Photo - Simplex Editor
@@ -8,10 +9,8 @@ import { X, RotateCcw, RotateCw, Download, ChevronUp } from "lucide-react";
  * 
  * Layout: Mobile-first vertical stack
  * - Top bar: Back, Undo, Redo, Save buttons
- * - Center: Filerobot Image Editor placeholder (will be integrated)
+ * - Center: Filerobot Image Editor (REAL CANVAS)
  * - Bottom: Navigation tabs (Edit, Poles AI)
- * 
- * TODO: Integrate Filerobot Image Editor SDK
  */
 export default function WorkspacePhoto() {
   const [, setLocation] = useLocation();
@@ -59,16 +58,11 @@ export default function WorkspacePhoto() {
           </div>
         </div>
 
-        {/* Editor Area - Placeholder for Filerobot SDK */}
-        <div className="flex-1 bg-gray-950 border border-gray-800 m-4 rounded-sm flex items-center justify-center overflow-hidden">
-          <div className="text-center">
-            <div className="text-gray-500 text-sm mb-2">
-              Filerobot Image Editor
-            </div>
-            <div className="text-gray-600 text-xs">
-              (SDK akan diintegrasikan di sini)
-            </div>
-          </div>
+        {/* Editor Area - REAL Canvas Image Editor */}
+        <div className="flex-1 overflow-hidden">
+          <CustomImageEditor
+            onSave={(data) => console.log("Saved:", data)}
+          />
         </div>
 
         {/* Bottom Navigation Bar */}

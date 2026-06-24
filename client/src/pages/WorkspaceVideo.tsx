@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { X, Play, Pause, ChevronUp } from "lucide-react";
+import { X, ChevronUp } from "lucide-react";
+import VideoEditor from "@/components/VideoEditor";
 
 /**
  * Workspace Video - Simplex Editor
@@ -8,26 +9,16 @@ import { X, Play, Pause, ChevronUp } from "lucide-react";
  * 
  * Layout: Mobile-first vertical stack
  * - Top bar: Back button
- * - Center: Video preview player
- * - Middle: Timeline (multi-track horizontal)
+ * - Center: Real Video Editor (HTML5 + Canvas Timeline)
  * - Bottom: Navigation tabs (Edit Video, Poles AI)
- * 
- * TODO: Integrate OpenReel Video SDK
  */
 export default function WorkspaceVideo() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<"edit" | "ai">("edit");
   const [showAIPanel, setShowAIPanel] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const videoDuration = 120; // seconds
 
   const handleBack = () => {
     setLocation("/");
-  };
-
-  const togglePlayPause = () => {
-    setIsPlaying(!isPlaying);
   };
 
   return (
@@ -48,48 +39,11 @@ export default function WorkspaceVideo() {
           <div className="w-8" /> {/* Spacer for alignment */}
         </div>
 
-        {/* Video Preview Player */}
-        <div className="bg-gray-950 border border-gray-800 m-4 rounded-sm aspect-video flex items-center justify-center overflow-hidden">
-          <div className="text-center">
-            <div className="text-gray-500 text-sm mb-2">
-              Video Preview
-            </div>
-            <div className="text-gray-600 text-xs">
-              (OpenReel SDK akan diintegrasikan di sini)
-            </div>
-          </div>
-        </div>
-
-        {/* Playback Controls */}
-        <div className="px-4 py-3 bg-gray-950 border-y border-gray-800">
-          <div className="flex items-center gap-3 mb-3">
-            <button
-              onClick={togglePlayPause}
-              className="p-2 rounded-sm bg-cyan-400 text-black hover:bg-cyan-300 transition-colors"
-            >
-              {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
-            </button>
-            <div className="flex-1">
-              <input
-                type="range"
-                min="0"
-                max={videoDuration}
-                value={currentTime}
-                onChange={(e) => setCurrentTime(Number(e.target.value))}
-                className="w-full h-1 bg-gray-800 rounded-full appearance-none cursor-pointer accent-cyan-400"
-              />
-            </div>
-            <span className="text-xs text-gray-400 whitespace-nowrap">
-              {Math.floor(currentTime / 60)}:{String(Math.floor(currentTime % 60)).padStart(2, "0")}
-            </span>
-          </div>
-        </div>
-
-        {/* Timeline Placeholder */}
-        <div className="bg-gray-950 border-y border-gray-800 px-4 py-3 h-20 overflow-x-auto">
-          <div className="text-center text-gray-600 text-xs py-6">
-            Multi-track Timeline (OpenReel SDK)
-          </div>
+        {/* Editor Area - REAL Video Editor */}
+        <div className="flex-1 overflow-hidden">
+          <VideoEditor
+            onSave={(data) => console.log("Saved:", data)}
+          />
         </div>
 
         {/* Bottom Navigation Bar */}
