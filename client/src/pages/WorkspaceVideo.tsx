@@ -1,6 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
-import { X, ChevronUp } from "lucide-react";
+import { X, ChevronUp, AlertCircle } from "lucide-react";
 
 /**
  * Workspace Video - Simplex Editor
@@ -17,26 +17,52 @@ export default function WorkspaceVideo() {
   const [showAIPanel, setShowAIPanel] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [videoUrl, setVideoUrl] = useState(
-    "https://commondatastorage.googleapis.com/gtv-videos-library/sample/big_buck_bunny.mp4"
-  );
+  const [videoUrl, setVideoUrl] = useState<string>("");
+  const [videoKey, setVideoKey] = useState(0); // Force re-render video element
   const [volume, setVolume] = useState(1);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [startTime, setStartTime] = useState(0);
   const [endTime, setEndTime] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string>("");
+
+  // Initialize with sample video on mount
+  useEffect(() => {
+    // Use a reliable video URL
+    const sampleVideoUrl = "https://media-files.vidstack.io/audio.mp4";
+    setVideoUrl(sampleVideoUrl);
+  }, []);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file type
+      if (!file.type.startsWith("video/")) {
+        setError("Please select a valid video file");
+        return;
+      }
+
+      setIsLoading(true);
+      setError("");
+
+      // Create object URL from file
       const url = URL.createObjectURL(file);
       setVideoUrl(url);
+      setVideoKey((prev) => prev + 1); // Force re-render
       setStartTime(0);
       setEndTime(0);
+      setVolume(1);
+      setPlaybackRate(1);
+      setIsLoading(false);
     }
   };
 
   const handleBack = () => {
+    // Clean up object URL
+    if (videoUrl && videoUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(videoUrl);
+    }
     setLocation("/");
   };
 
@@ -45,7 +71,12 @@ export default function WorkspaceVideo() {
       const duration = videoRef.current.duration;
       setVideoDuration(duration);
       setEndTime(duration);
+      setError("");
     }
+  };
+
+  const handleVideoError = () => {
+    setError("Failed to load video. Please try another file.");
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,33 +131,59 @@ export default function WorkspaceVideo() {
           </button>
           <h2 className="text-white font-semibold text-sm">Video Editor</h2>
           
-          {/* Upload File Button */}
+          {/* Upload File Button - Mobile Optimized */}
           <input
             ref={fileInputRef}
             type="file"
             accept="video/*"
             onChange={handleFileUpload}
             className="hidden"
+            capture="environment"
           />
           <button
-            onClick={() => fileInputRef.current?.click()}
-            className="p-2 hover:bg-gray-900 rounded-sm transition-colors text-cyan-400 font-bold text-lg"
-            title="Upload Video"
+            onClick={() => {
+              setError("");
+              fileInputRef.current?.click();
+            }}
+            disabled={isLoading}
+            className="p-2 hover:bg-gray-900 rounded-sm transition-colors text-cyan-400 font-bold text-lg disabled:opacity-50"
+            title="Upload Video from Gallery"
           >
-            📁
+            {isLoading ? "⏳" : "📁"}
           </button>
         </div>
 
         {/* Video Player - HTML5 Video Asli */}
-        <div className="flex-1 bg-gray-950 border border-gray-800 m-4 rounded-sm overflow-hidden flex items-center justify-center flex-shrink-0">
-          <video
-            ref={videoRef}
-            src={videoUrl}
-            controls
-            onLoadedMetadata={handleLoadedMetadata}
-            className="w-full h-full object-contain bg-black"
-            style={{ maxHeight: "300px" }}
-          />
+        <div className="flex-1 bg-gray-950 border border-gray-800 m-4 rounded-sm overflow-hidden flex items-center justify-center flex-shrink-0 relative">
+          {videoUrl ? (
+            <video
+              key={videoKey}
+              ref={videoRef}
+              src={videoUrl}
+              controls
+              controlsList="nodownload"
+              onLoadedMetadata={handleLoadedMetadata}
+              onError={handleVideoError}
+              className="w-full h-full object-contain bg-black"
+              style={{ maxHeight: "300px" }}
+              crossOrigin="anonymous"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2 text-gray-400">
+              <div className="text-4xl">📹</div>
+              <p className="text-xs text-center">Tap upload button to select video</p>
+            </div>
+          )}
+
+          {/* Error Message Overlay */}
+          {error && (
+            <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 rounded-sm">
+              <div className="flex flex-col items-center gap-2">
+                <AlertCircle size={24} className="text-red-500" />
+                <p className="text-red-400 text-xs text-center">{error}</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Bottom Navigation Bar */}
