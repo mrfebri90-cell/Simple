@@ -1,25 +1,56 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
-import { X, ChevronUp } from "lucide-react";
-import VideoEditor from "@/components/VideoEditor";
+import { X, Play, Pause, Volume2, VolumeX, ChevronUp } from "lucide-react";
+import ReactPlayer from "react-player";
 
 /**
  * Workspace Video - Simplex Editor
  * Design: Neon Cyberpunk
  * 
- * Layout: Mobile-first vertical stack
- * - Top bar: Back button
- * - Center: Real Video Editor (HTML5 + Canvas Timeline)
- * - Bottom: Navigation tabs (Edit Video, Poles AI)
+ * Menggunakan SDK ASLI: React Player + HTML5 Video
+ * - Real video player dengan controls
+ * - File upload input untuk video custom
+ * - Timeline dengan scrubbing
  */
 export default function WorkspaceVideo() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<"edit" | "ai">("edit");
   const [showAIPanel, setShowAIPanel] = useState(false);
+  const playerRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [videoUrl, setVideoUrl] = useState(
+    "https://commondatastorage.googleapis.com/gtv-videos-library/sample/big_buck_bunny.mp4"
+  );
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [played, setPlayed] = useState(0);
+  const [volume, setVolume] = useState(0.8);
+  const [isMuted, setIsMuted] = useState(false);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setVideoUrl(url);
+    }
+  };
 
   const handleBack = () => {
     setLocation("/");
   };
+
+  const formatTime = (seconds: number) => {
+    const date = new Date(seconds * 1000);
+    const hh = date.getUTCHours();
+    const mm = date.getUTCMinutes();
+    const ss = ("0" + date.getUTCSeconds()).slice(-2);
+    if (hh) {
+      return `${hh}:${("0" + mm).slice(-2)}:${ss}`;
+    }
+    return `${mm}:${ss}`;
+  };
+
+  const Player = ReactPlayer as any;
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4 py-4">
@@ -36,14 +67,96 @@ export default function WorkspaceVideo() {
             <X size={20} className="text-cyan-400" />
           </button>
           <h2 className="text-white font-semibold text-sm">Video Editor</h2>
-          <div className="w-8" /> {/* Spacer for alignment */}
+          
+          {/* Upload File Button */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="video/*"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="p-2 hover:bg-gray-900 rounded-sm transition-colors"
+            title="Upload Video"
+          >
+            <Play size={20} className="text-cyan-400 rotate-180" />
+          </button>
         </div>
 
-        {/* Editor Area - REAL Video Editor */}
-        <div className="flex-1 overflow-hidden">
-          <VideoEditor
-            onSave={(data) => console.log("Saved:", data)}
+        {/* Video Player - REACT PLAYER SDK */}
+        <div className="flex-1 bg-gray-950 border border-gray-800 m-4 rounded-sm overflow-hidden flex items-center justify-center">
+          <Player
+            ref={playerRef}
+            url={videoUrl}
+            playing={isPlaying}
+            controls={false}
+            width="100%"
+            height="100%"
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            onDuration={setDuration}
+            onProgress={(state: any) => setPlayed(state.played)}
+            onError={(e: any) => console.error("Video error:", e)}
+            progressInterval={100}
+            playbackRate={1}
+            volume={volume}
+            muted={isMuted}
           />
+        </div>
+
+        {/* Playback Controls */}
+        <div className="px-4 py-3 bg-gray-950 border-y border-gray-800">
+          <div className="flex items-center gap-3 mb-3">
+            <button
+              onClick={() => setIsPlaying(!isPlaying)}
+              className="p-2 rounded-sm bg-cyan-400 text-black hover:bg-cyan-300 transition-colors"
+            >
+              {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
+            </button>
+
+            <div className="flex-1">
+              <input
+                type="range"
+                min={0}
+                max={0.999999}
+                step="any"
+                value={played}
+                onChange={(e) => {
+                  const newPlayed = parseFloat(e.target.value);
+                  setPlayed(newPlayed);
+                  playerRef.current?.seekTo(newPlayed);
+                }}
+                className="w-full h-1 bg-gray-800 rounded-full appearance-none cursor-pointer accent-cyan-400"
+              />
+            </div>
+
+            <span className="text-xs text-gray-400 whitespace-nowrap">
+              {formatTime(played * duration)} / {formatTime(duration)}
+            </span>
+
+            <button
+              onClick={() => setIsMuted(!isMuted)}
+              className="p-2 hover:bg-gray-800 rounded-sm transition-colors"
+            >
+              {isMuted ? (
+                <VolumeX size={18} className="text-gray-400" />
+              ) : (
+                <Volume2 size={18} className="text-gray-400" />
+              )}
+            </button>
+
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step="0.1"
+              value={volume}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              className="w-16 h-1 bg-gray-800 rounded-full appearance-none cursor-pointer accent-cyan-400"
+            />
+          </div>
         </div>
 
         {/* Bottom Navigation Bar */}

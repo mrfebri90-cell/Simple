@@ -1,23 +1,90 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
-import { X, RotateCcw, RotateCw, Download, ChevronUp } from "lucide-react";
-import CustomImageEditor from "@/components/CustomImageEditor";
+import { X, Download, ChevronUp } from "lucide-react";
+import FilerobotImageEditor from "filerobot-image-editor";
 
 /**
  * Workspace Photo - Simplex Editor
  * Design: Neon Cyberpunk
  * 
- * Layout: Mobile-first vertical stack
- * - Top bar: Back, Undo, Redo, Save buttons
- * - Center: Filerobot Image Editor (REAL CANVAS)
- * - Bottom: Navigation tabs (Edit, Poles AI)
+ * Menggunakan SDK ASLI: Filerobot Image Editor
+ * - Canvas editor bawaan SDK
+ * - Tools: Crop, Adjust, Filters, Undo/Redo
+ * - File upload input untuk foto custom
  */
 export default function WorkspacePhoto() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<"edit" | "ai">("edit");
   const [showAIPanel, setShowAIPanel] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImage, setSelectedImage] = useState<string>(
+    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=500&h=500&fit=crop"
+  );
+
+  // Inisialisasi Filerobot Editor
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const initializeEditor = () => {
+      try {
+        // Hapus editor lama jika ada
+        if (editorRef.current) {
+          editorRef.current.terminate?.();
+        }
+
+        // Konfigurasi Filerobot Image Editor
+        const config: any = {
+          source: selectedImage,
+          onSave: (editorState: any, canvas: any) => {
+            console.log("Image saved:", editorState);
+            // Download hasil
+            const link = document.createElement("a");
+            link.href = canvas.toDataURL("image/png");
+            link.download = "edited-image.png";
+            link.click();
+          },
+          onClose: () => {
+            console.log("Editor closed");
+          },
+          showBackButton: false,
+          savingPixelRatio: 1,
+          previewPixelRatio: 1,
+        };
+
+        // Inisialisasi editor dengan container
+        const editor = new FilerobotImageEditor(containerRef.current!, config);
+        editorRef.current = editor;
+
+        // Render editor
+        editor.render();
+      } catch (error) {
+        console.error("Error initializing Filerobot:", error);
+      }
+    };
+
+    // Delay untuk memastikan DOM siap
+    const timer = setTimeout(initializeEditor, 100);
+    return () => clearTimeout(timer);
+  }, [selectedImage]);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const imageUrl = event.target?.result as string;
+        setSelectedImage(imageUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleBack = () => {
+    if (editorRef.current) {
+      editorRef.current.terminate?.();
+    }
     setLocation("/");
   };
 
@@ -37,33 +104,30 @@ export default function WorkspacePhoto() {
           </button>
 
           <div className="flex items-center gap-2">
+            {/* Upload File Button */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
             <button
+              onClick={() => fileInputRef.current?.click()}
               className="p-2 hover:bg-gray-900 rounded-sm transition-colors"
-              title="Undo"
+              title="Upload Image"
             >
-              <RotateCcw size={20} className="text-gray-400" />
-            </button>
-            <button
-              className="p-2 hover:bg-gray-900 rounded-sm transition-colors"
-              title="Redo"
-            >
-              <RotateCw size={20} className="text-gray-400" />
-            </button>
-            <button
-              className="p-2 hover:bg-gray-900 rounded-sm transition-colors"
-              title="Save"
-            >
-              <Download size={20} className="text-cyan-400" />
+              <Download size={20} className="text-cyan-400 rotate-180" />
             </button>
           </div>
         </div>
 
-        {/* Editor Area - REAL Canvas Image Editor */}
-        <div className="flex-1 overflow-hidden">
-          <CustomImageEditor
-            onSave={(data) => console.log("Saved:", data)}
-          />
-        </div>
+        {/* Editor Area - FILEROBOT SDK CANVAS */}
+        <div 
+          ref={containerRef}
+          className="flex-1 overflow-hidden bg-gray-950"
+          style={{ minHeight: 0 }}
+        />
 
         {/* Bottom Navigation Bar */}
         <div className="border-t border-gray-800 bg-gray-950">
