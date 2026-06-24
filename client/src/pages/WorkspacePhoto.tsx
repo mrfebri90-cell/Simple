@@ -5,12 +5,12 @@ import FilerobotImageEditor from "filerobot-image-editor";
 
 /**
  * Workspace Photo - Simplex Editor
- * Design: Neon Cyberpunk
+ * Design: Neon Cyberpunk Dark Mode Mobile
  * 
  * Menggunakan SDK ASLI: Filerobot Image Editor
- * - Canvas editor bawaan SDK
- * - Tools: Crop, Adjust, Filters, Undo/Redo
- * - File upload input untuk foto custom
+ * - Dark Mode dengan filter invert
+ * - Layout Mobile (toolbar horizontal di bawah)
+ * - Canvas editor bawaan SDK dengan tools
  */
 export default function WorkspacePhoto() {
   const [, setLocation] = useLocation();
@@ -23,7 +23,7 @@ export default function WorkspacePhoto() {
     "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=500&h=500&fit=crop"
   );
 
-  // Inisialisasi Filerobot Editor
+  // Inisialisasi Filerobot Editor dengan Dark Mode Mobile
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -34,7 +34,7 @@ export default function WorkspacePhoto() {
           editorRef.current.terminate?.();
         }
 
-        // Konfigurasi Filerobot Image Editor
+        // Konfigurasi Filerobot
         const config: any = {
           source: selectedImage,
           onSave: (editorState: any, canvas: any) => {
@@ -48,9 +48,30 @@ export default function WorkspacePhoto() {
           onClose: () => {
             console.log("Editor closed");
           },
+          
+          // Tools Configuration
+          tools: {
+            enabled: [
+              "crop",
+              "finetune",
+              "filters",
+              "adjust",
+              "watermark",
+              "annotate",
+              "resize",
+              "rotate",
+              "flip",
+            ],
+          },
+          
+          // Mobile-specific settings
           showBackButton: false,
           savingPixelRatio: 1,
           previewPixelRatio: 1,
+          minWidth: 100,
+          minHeight: 100,
+          maxWidth: 4000,
+          maxHeight: 4000,
         };
 
         // Inisialisasi editor dengan container
@@ -89,12 +110,12 @@ export default function WorkspacePhoto() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4 py-4">
-      {/* Mobile-first container */}
-      <div className="w-full max-w-md h-screen max-h-screen flex flex-col bg-black">
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-0 py-0">
+      {/* Mobile-first container - Full screen */}
+      <div className="w-full max-w-md h-screen max-h-screen flex flex-col bg-black overflow-hidden">
         
         {/* Top Bar - Controls */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-black flex-shrink-0">
           <button
             onClick={handleBack}
             className="p-2 hover:bg-gray-900 rounded-sm transition-colors"
@@ -102,6 +123,8 @@ export default function WorkspacePhoto() {
           >
             <X size={20} className="text-cyan-400" />
           </button>
+
+          <h2 className="text-white font-semibold text-sm">Photo Editor</h2>
 
           <div className="flex items-center gap-2">
             {/* Upload File Button */}
@@ -122,15 +145,19 @@ export default function WorkspacePhoto() {
           </div>
         </div>
 
-        {/* Editor Area - FILEROBOT SDK CANVAS */}
+        {/* Editor Area - FILEROBOT SDK CANVAS - Dark Mode with Filter */}
         <div 
           ref={containerRef}
-          className="flex-1 overflow-hidden bg-gray-950"
-          style={{ minHeight: 0 }}
+          className="flex-1 overflow-hidden bg-black"
+          style={{ 
+            minHeight: 0,
+            width: "100%",
+            filter: "invert(1) hue-rotate(180deg)",
+          }}
         />
 
         {/* Bottom Navigation Bar */}
-        <div className="border-t border-gray-800 bg-gray-950">
+        <div className="border-t border-gray-800 bg-black flex-shrink-0">
           {/* Tab Buttons */}
           <div className="flex items-center gap-0">
             <button
@@ -173,7 +200,7 @@ export default function WorkspacePhoto() {
 
           {/* AI Panel - Bottom Sheet */}
           {showAIPanel && activeTab === "ai" && (
-            <div className="bg-gray-900 border-t border-gray-800 p-4 animate-in slide-in-from-bottom">
+            <div className="bg-gray-900 border-t border-gray-800 p-4 animate-in slide-in-from-bottom max-h-48 overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-white font-semibold text-sm">AI Enhancement</h3>
                 <button

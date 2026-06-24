@@ -153,6 +153,49 @@
 }
 
 @layer components {
+  /* Filerobot Dark Mode Override */
+  :root .FIE_container,
+  :root .FIE_wrapper,
+  :root [class*="FIE"] {
+    --color-primary: #000000 !important;
+    --color-secondary: #0a0a0a !important;
+    --color-background: #000000 !important;
+    --color-text: #ffffff !important;
+    --color-text-secondary: #cccccc !important;
+    --color-border: #333333 !important;
+  }
+
+  .FIE_container {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+  }
+
+  .FIE_container * {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border-color: #333333 !important;
+  }
+
+  .FIE_container button,
+  .FIE_container [role="button"] {
+    background-color: #0a0a0a !important;
+    color: #ffffff !important;
+    border-color: #333333 !important;
+  }
+
+  .FIE_container button:hover,
+  .FIE_container [role="button"]:hover {
+    background-color: #1a1a1a !important;
+  }
+
+  .FIE_container input,
+  .FIE_container textarea,
+  .FIE_container select {
+    background-color: #0a0a0a !important;
+    color: #ffffff !important;
+    border-color: #333333 !important;
+  }
+
   /**
    * Custom container utility that centers content and adds responsive padding.
    * Mobile-first design: max-width 428px (iPhone 12 Pro) for mobile testing

@@ -1,37 +1,38 @@
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";
-import { X, Play, Pause, Volume2, VolumeX, ChevronUp } from "lucide-react";
-import ReactPlayer from "react-player";
+import { X, ChevronUp } from "lucide-react";
 
 /**
  * Workspace Video - Simplex Editor
- * Design: Neon Cyberpunk
+ * Design: Neon Cyberpunk Dark Mode Mobile
  * 
- * Menggunakan SDK ASLI: React Player + HTML5 Video
- * - Real video player dengan controls
- * - File upload input untuk video custom
- * - Timeline dengan scrubbing
+ * Menggunakan: HTML5 <video> asli yang fungsional
+ * - Upload video dari galeri ponsel
+ * - Kontrol Potong, Volume, Kecepatan
+ * - Dark Mode Mobile UI
  */
 export default function WorkspaceVideo() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<"edit" | "ai">("edit");
   const [showAIPanel, setShowAIPanel] = useState(false);
-  const playerRef = useRef<any>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [videoUrl, setVideoUrl] = useState(
     "https://commondatastorage.googleapis.com/gtv-videos-library/sample/big_buck_bunny.mp4"
   );
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [duration, setDuration] = useState(0);
-  const [played, setPlayed] = useState(0);
-  const [volume, setVolume] = useState(0.8);
-  const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [startTime, setStartTime] = useState(0);
+  const [endTime, setEndTime] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
       setVideoUrl(url);
+      setStartTime(0);
+      setEndTime(0);
     }
   };
 
@@ -39,26 +40,57 @@ export default function WorkspaceVideo() {
     setLocation("/");
   };
 
-  const formatTime = (seconds: number) => {
-    const date = new Date(seconds * 1000);
-    const hh = date.getUTCHours();
-    const mm = date.getUTCMinutes();
-    const ss = ("0" + date.getUTCSeconds()).slice(-2);
-    if (hh) {
-      return `${hh}:${("0" + mm).slice(-2)}:${ss}`;
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      const duration = videoRef.current.duration;
+      setVideoDuration(duration);
+      setEndTime(duration);
     }
-    return `${mm}:${ss}`;
   };
 
-  const Player = ReactPlayer as any;
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    setVolume(value);
+    if (videoRef.current) {
+      videoRef.current.volume = value;
+    }
+  };
+
+  const handlePlaybackRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    setPlaybackRate(value);
+    if (videoRef.current) {
+      videoRef.current.playbackRate = value;
+    }
+  };
+
+  const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    setStartTime(value);
+    if (videoRef.current) {
+      videoRef.current.currentTime = value;
+    }
+  };
+
+  const handleEndTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    setEndTime(value);
+  };
+
+  const formatTime = (seconds: number) => {
+    if (!seconds || isNaN(seconds)) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4 py-4">
-      {/* Mobile-first container */}
-      <div className="w-full max-w-md h-screen max-h-screen flex flex-col bg-black">
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-0 py-0">
+      {/* Mobile-first container - Full screen */}
+      <div className="w-full max-w-md h-screen max-h-screen flex flex-col bg-black overflow-hidden">
         
         {/* Top Bar - Controls */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-black flex-shrink-0">
           <button
             onClick={handleBack}
             className="p-2 hover:bg-gray-900 rounded-sm transition-colors"
@@ -78,91 +110,29 @@ export default function WorkspaceVideo() {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="p-2 hover:bg-gray-900 rounded-sm transition-colors"
+            className="p-2 hover:bg-gray-900 rounded-sm transition-colors text-cyan-400 font-bold text-lg"
             title="Upload Video"
           >
-            <Play size={20} className="text-cyan-400 rotate-180" />
+            📁
           </button>
         </div>
 
-        {/* Video Player - REACT PLAYER SDK */}
-        <div className="flex-1 bg-gray-950 border border-gray-800 m-4 rounded-sm overflow-hidden flex items-center justify-center">
-          <Player
-            ref={playerRef}
-            url={videoUrl}
-            playing={isPlaying}
-            controls={false}
-            width="100%"
-            height="100%"
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
-            onDuration={setDuration}
-            onProgress={(state: any) => setPlayed(state.played)}
-            onError={(e: any) => console.error("Video error:", e)}
-            progressInterval={100}
-            playbackRate={1}
-            volume={volume}
-            muted={isMuted}
+        {/* Video Player - HTML5 Video Asli */}
+        <div className="flex-1 bg-gray-950 border border-gray-800 m-4 rounded-sm overflow-hidden flex items-center justify-center flex-shrink-0">
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            controls
+            onLoadedMetadata={handleLoadedMetadata}
+            className="w-full h-full object-contain bg-black"
+            style={{ maxHeight: "300px" }}
           />
         </div>
 
-        {/* Playback Controls */}
-        <div className="px-4 py-3 bg-gray-950 border-y border-gray-800">
-          <div className="flex items-center gap-3 mb-3">
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="p-2 rounded-sm bg-cyan-400 text-black hover:bg-cyan-300 transition-colors"
-            >
-              {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
-            </button>
-
-            <div className="flex-1">
-              <input
-                type="range"
-                min={0}
-                max={0.999999}
-                step="any"
-                value={played}
-                onChange={(e) => {
-                  const newPlayed = parseFloat(e.target.value);
-                  setPlayed(newPlayed);
-                  playerRef.current?.seekTo(newPlayed);
-                }}
-                className="w-full h-1 bg-gray-800 rounded-full appearance-none cursor-pointer accent-cyan-400"
-              />
-            </div>
-
-            <span className="text-xs text-gray-400 whitespace-nowrap">
-              {formatTime(played * duration)} / {formatTime(duration)}
-            </span>
-
-            <button
-              onClick={() => setIsMuted(!isMuted)}
-              className="p-2 hover:bg-gray-800 rounded-sm transition-colors"
-            >
-              {isMuted ? (
-                <VolumeX size={18} className="text-gray-400" />
-              ) : (
-                <Volume2 size={18} className="text-gray-400" />
-              )}
-            </button>
-
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step="0.1"
-              value={volume}
-              onChange={(e) => setVolume(parseFloat(e.target.value))}
-              className="w-16 h-1 bg-gray-800 rounded-full appearance-none cursor-pointer accent-cyan-400"
-            />
-          </div>
-        </div>
-
         {/* Bottom Navigation Bar */}
-        <div className="border-t border-gray-800 bg-gray-950 flex-1 flex flex-col">
+        <div className="border-t border-gray-800 bg-black flex-1 flex flex-col overflow-hidden">
           {/* Tab Buttons */}
-          <div className="flex items-center gap-0">
+          <div className="flex items-center gap-0 flex-shrink-0">
             <button
               onClick={() => {
                 setActiveTab("edit");
@@ -200,6 +170,95 @@ export default function WorkspaceVideo() {
               ✨ Poles AI
             </button>
           </div>
+
+          {/* Edit Video Panel */}
+          {activeTab === "edit" && (
+            <div className="bg-gray-900 border-t border-gray-800 p-4 overflow-y-auto flex-1">
+              <h3 className="text-white font-semibold text-sm mb-4">Video Controls</h3>
+
+              {/* Volume Control */}
+              <div className="mb-5">
+                <label className="text-gray-300 text-xs font-medium block mb-2">
+                  Volume: {Math.round(volume * 100)}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={volume}
+                  onChange={handleVolumeChange}
+                  className="w-full h-2 bg-gray-800 rounded-full appearance-none cursor-pointer accent-cyan-400"
+                />
+              </div>
+
+              {/* Playback Rate Control */}
+              <div className="mb-5">
+                <label className="text-gray-300 text-xs font-medium block mb-2">
+                  Playback Speed: {playbackRate.toFixed(1)}x
+                </label>
+                <div className="flex gap-2">
+                  {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
+                    <button
+                      key={rate}
+                      onClick={() => {
+                        setPlaybackRate(rate);
+                        if (videoRef.current) {
+                          videoRef.current.playbackRate = rate;
+                        }
+                      }}
+                      className={`flex-1 py-2 px-2 rounded-sm text-xs font-medium transition-all ${
+                        playbackRate === rate
+                          ? "bg-cyan-400 text-black"
+                          : "border border-cyan-400 text-cyan-400 hover:bg-cyan-400 hover:bg-opacity-10"
+                      }`}
+                    >
+                      {rate}x
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Trim/Potong Control */}
+              <div className="mb-5">
+                <label className="text-gray-300 text-xs font-medium block mb-2">
+                  Trim Video (Start: {formatTime(startTime)} - End: {formatTime(endTime)})
+                </label>
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-gray-400 text-xs block mb-1">Start Time</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max={videoDuration}
+                      step="0.1"
+                      value={startTime}
+                      onChange={handleStartTimeChange}
+                      className="w-full h-2 bg-gray-800 rounded-full appearance-none cursor-pointer accent-cyan-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-gray-400 text-xs block mb-1">End Time</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max={videoDuration}
+                      step="0.1"
+                      value={endTime}
+                      onChange={handleEndTimeChange}
+                      className="w-full h-2 bg-gray-800 rounded-full appearance-none cursor-pointer accent-cyan-400"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Info */}
+              <div className="text-gray-400 text-xs">
+                <p>Video Duration: {formatTime(videoDuration)}</p>
+                <p>Trim Duration: {formatTime(endTime - startTime)}</p>
+              </div>
+            </div>
+          )}
 
           {/* AI Panel - Bottom Sheet */}
           {showAIPanel && activeTab === "ai" && (
